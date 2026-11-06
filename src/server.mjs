@@ -3,7 +3,7 @@ import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
 import { join, predict, state } from "./game.mjs";
-import { readSettlements } from "./squeek.mjs";
+import { readCore, readSettlements } from "./squeek.mjs";
 import { getMeta } from "./db.mjs";
 
 const PORT = Number(process.env.PORT || 3000);
@@ -36,8 +36,11 @@ const server = http.createServer(async (req, res) => {
       return json(res, 200, state());
     }
     if (req.method === "GET" && url.pathname === "/api/core") {
-      const c = await readSettlements("24h");
-      return json(res, 200, { status: c.status, chainId: c.chainId, summary: c.summary, last: c.rounds.slice(-5) });
+      const c = await readCore();
+      const s24 = await readSettlements("24h").catch(() => null);
+      return json(res, 200, { status: c.status, settledThroughRound: c.settledThroughRound,
+        chainId: c.chainId, summary: s24?.summary || null,
+        last: c.rounds.slice(-5).map((r) => ({ id: r.id, work: r.work, blocks: r.blocks, ts: r.timestamp })) });
     }
     if (req.method === "POST" && url.pathname === "/api/join") {
       const b = await readBody(req);

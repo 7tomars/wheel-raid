@@ -1,5 +1,5 @@
 // poller.mjs — follows Squeekchain rounds and settles them into Wheel Raid.
-import { readSettlements } from "./squeek.mjs";
+import { readCore } from "./squeek.mjs";
 import { settleRound } from "./game.mjs";
 import { getMeta } from "./db.mjs";
 
@@ -19,7 +19,7 @@ async function postRecap(text) {
 }
 
 async function tick() {
-  const feed = await readSettlements(process.env.SETTLE_RANGE || "24h");
+  const feed = await readCore();
   const local = Number(getMeta("settledThrough", 0));
   const fresh = feed.rounds.filter((r) => r.id > local).sort((a, b) => a.id - b.id);
   if (!fresh.length) return;

@@ -31,6 +31,12 @@ export async function readCore() {
       };
     })
     .sort((a, b) => a.id - b.id);
+  // blocks per round = delta of cumulativeBlockUnits / blockUnitsPerBlock(1e9)
+  for (let i = 0; i < rounds.length; i++) {
+    const prev = i > 0 ? rounds[i - 1].cumulativeBlockUnits : null;
+    rounds[i].blocks = prev == null ? 0
+      : Math.max(0, Math.round((Number(rounds[i].cumulativeBlockUnits) - Number(prev)) / 1e9));
+  }
   return {
     status: d?.status,
     chainId: d?.chain?.chainId,
