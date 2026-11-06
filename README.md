@@ -7,6 +7,8 @@ distance into damage against a shared weekly boss.
 
 Live: <https://raid.7tomars.web.id>
 
+Repository: https://github.com/7tomars/wheel-raid
+
 ## Why it is not a dashboard
 
 Wheel Raid has game state, persistent players, weekly bosses, damage math, prediction resolution and a

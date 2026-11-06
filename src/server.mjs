@@ -3,7 +3,7 @@ import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
 import { join, predict, state } from "./game.mjs";
-import { readCore, readSettlements } from "./squeek.mjs";
+import { readCore, readSettlements, readStatus } from "./squeek.mjs";
 import { getMeta } from "./db.mjs";
 
 const PORT = Number(process.env.PORT || 3000);
@@ -24,15 +24,19 @@ const readBody = (req) => new Promise((resolve, reject) => {
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host || "localhost"}`);
   try {
-    if (req.method === "GET" && (url.pathname === "/" || url.pathname === "/index.html")) {
+    if ((req.method === "GET" || req.method === "HEAD") && (url.pathname === "/" || url.pathname === "/index.html")) {
       let html = fs.readFileSync(path.join(ROOT, "public", "index.html"), "utf8");
       // Squeekchain verification page tag (diisi setelah challenge diterbitkan)
       try {
         const tagFile = path.join(ROOT, "public", "squeek-verify.html");
         if (fs.existsSync(tagFile)) html = html.replace("<!--SQUEEK_VERIFY_TAG-->", fs.readFileSync(tagFile, "utf8"));
       } catch {}
-      res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
-      return res.end(html);
+      res.writeHead(200, { "content-type": "text/html; charset=utf-8", "content-length": Buffer.byteLength(html) });
+      return res.end(req.method === "HEAD" ? undefined : html);
+    }
+    if (req.method === "GET" && url.pathname === "/v1/status") {
+      const up = await readStatus().catch((e) => ({ error: e.message }));
+      return json(res, 200, { app: "wheel-raid", ok: true, settledThrough: Number(getMeta("settledThrough", 0)), upstream: up });
     }
     if (req.method === "GET" && url.pathname === "/healthz") {
       return json(res, 200, { ok: true, settledThrough: Number(getMeta("settledThrough", 0)) });
