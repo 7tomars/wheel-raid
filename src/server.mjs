@@ -25,7 +25,12 @@ const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host || "localhost"}`);
   try {
     if (req.method === "GET" && (url.pathname === "/" || url.pathname === "/index.html")) {
-      const html = fs.readFileSync(path.join(ROOT, "public", "index.html"));
+      let html = fs.readFileSync(path.join(ROOT, "public", "index.html"), "utf8");
+      // Squeekchain verification page tag (diisi setelah challenge diterbitkan)
+      try {
+        const tagFile = path.join(ROOT, "public", "squeek-verify.html");
+        if (fs.existsSync(tagFile)) html = html.replace("<!--SQUEEK_VERIFY_TAG-->", fs.readFileSync(tagFile, "utf8"));
+      } catch {}
       res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
       return res.end(html);
     }

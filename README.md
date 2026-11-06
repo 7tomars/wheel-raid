@@ -5,8 +5,7 @@ hamster sprint: the distance comes from the public protocol API, not from a rand
 Players pick a role, call **RUN** or **SLEEP** for the next round, and convert the hamster's real
 distance into damage against a shared weekly boss.
 
-Live demo: <https://opposition-format-sonic-interesting.trycloudflare.com> (temporary tunnel until the
-production domain is attached).
+Live: <https://raid.7tomars.web.id>
 
 ## Why it is not a dashboard
 
