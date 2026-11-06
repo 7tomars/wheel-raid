@@ -1,0 +1,14 @@
+{
+  "name": "wheel-raid",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Wheel Raid — weekly boss raid driven by real Squeekchain round distance",
+  "scripts": {
+    "start": "node src/server.mjs",
+    "poller": "node src/poller.mjs",
+    "test": "node --test test/*.test.mjs",
+    "seed": "node scripts/seed.mjs"
+  },
+  "engines": { "node": ">=22" }
+}

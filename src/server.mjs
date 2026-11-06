@@ -1,0 +1,61 @@
+// server.mjs — public HTTP surface for Wheel Raid.
+import http from "node:http";
+import fs from "node:fs";
+import path from "node:path";
+import { join, predict, state } from "./game.mjs";
+import { readSettlements } from "./squeek.mjs";
+import { getMeta } from "./db.mjs";
+
+const PORT = Number(process.env.PORT || 3000);
+const HOST = process.env.HOST || "0.0.0.0";
+const ROOT = path.resolve(import.meta.dirname, "..");
+
+const json = (res, code, body) => {
+  const s = JSON.stringify(body);
+  res.writeHead(code, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store", "access-control-allow-origin": "*" });
+  res.end(s);
+};
+const readBody = (req) => new Promise((resolve, reject) => {
+  let b = "";
+  req.on("data", (c) => { b += c; if (b.length > 10000) { reject(new Error("body too large")); req.destroy(); } });
+  req.on("end", () => { try { resolve(b ? JSON.parse(b) : {}); } catch { reject(new Error("invalid json")); } });
+});
+
+const server = http.createServer(async (req, res) => {
+  const url = new URL(req.url, `http://${req.headers.host || "localhost"}`);
+  try {
+    if (req.method === "GET" && (url.pathname === "/" || url.pathname === "/index.html")) {
+      const html = fs.readFileSync(path.join(ROOT, "public", "index.html"));
+      res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
+      return res.end(html);
+    }
+    if (req.method === "GET" && url.pathname === "/healthz") {
+      return json(res, 200, { ok: true, settledThrough: Number(getMeta("settledThrough", 0)) });
+    }
+    if (req.method === "GET" && url.pathname === "/api/state") {
+      return json(res, 200, state());
+    }
+    if (req.method === "GET" && url.pathname === "/api/core") {
+      const c = await readSettlements("24h");
+      return json(res, 200, { status: c.status, chainId: c.chainId, summary: c.summary, last: c.rounds.slice(-5) });
+    }
+    if (req.method === "POST" && url.pathname === "/api/join") {
+      const b = await readBody(req);
+      const p = join({ name: b.name, role: b.role, address: b.address });
+      return json(res, 201, p);
+    }
+    if (req.method === "POST" && url.pathname === "/api/predict") {
+      const b = await readBody(req);
+      const token = req.headers["x-player-token"] || b.token;
+      return json(res, 200, predict(token, String(b.guess || "").toLowerCase()));
+    }
+    if (req.method === "GET" && url.pathname === "/api/leaderboard") {
+      return json(res, 200, state().leaderboard);
+    }
+    return json(res, 404, { error: "not_found" });
+  } catch (e) {
+    return json(res, e.code || 500, { error: e.message });
+  }
+});
+
+server.listen(PORT, HOST, () => console.log(`wheel-raid on http://${HOST}:${PORT}`));

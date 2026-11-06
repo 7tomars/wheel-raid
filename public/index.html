@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Wheel Raid — Squeekchain weekly boss</title>
+<meta name="description" content="Weekly boss raid powered by real Squeekchain round distance. Pick a role, call run or sleep, deal damage." />
+<style>
+  :root{--bg:#07090d;--panel:#0e131b;--line:#1d2634;--txt:#e6edf6;--dim:#8b9bb0;--acc:#7cf7c4;--warn:#ff6b6b;--gold:#ffd166}
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(1200px 600px at 80% -10%,#123 0,var(--bg) 55%);color:var(--txt);font:15px/1.55 ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+  a{color:var(--acc)}
+  .wrap{max-width:1040px;margin:0 auto;padding:28px 18px 64px}
+  header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  .brand{font-weight:800;letter-spacing:.5px;font-size:20px}
+  .brand span{color:var(--acc)}
+  .pill{border:1px solid var(--line);border-radius:999px;padding:5px 11px;font-size:12px;color:var(--dim)}
+  .hero{display:grid;grid-template-columns:1.4fr 1fr;gap:18px;margin-top:22px}
+  @media(max-width:820px){.hero{grid-template-columns:1fr}}
+  .card{background:linear-gradient(180deg,#101722,#0b1018);border:1px solid var(--line);border-radius:16px;padding:18px}
+  h1{margin:0 0 6px;font-size:30px;line-height:1.15}
+  h2{margin:0 0 12px;font-size:16px;letter-spacing:.3px;color:var(--dim);text-transform:uppercase}
+  .boss{font-size:22px;font-weight:800;margin:4px 0 10px}
+  .bar{height:16px;background:#1a2331;border-radius:999px;overflow:hidden;border:1px solid #243247}
+  .bar i{display:block;height:100%;background:linear-gradient(90deg,#7cf7c4,#3ea0ff);transition:width .5s}
+  .hp{display:flex;justify-content:space-between;font-size:13px;color:var(--dim);margin-top:7px}
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}
+  .stat{background:#0b111a;border:1px solid var(--line);border-radius:12px;padding:10px}
+  .stat b{display:block;font-size:19px}
+  .stat small{color:var(--dim)}
+  .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+  input,select{background:#0a0f17;border:1px solid var(--line);color:var(--txt);border-radius:10px;padding:10px 12px;font:inherit}
+  input{flex:1;min-width:160px}
+  button{cursor:pointer;border-radius:10px;border:1px solid #2b6;background:#12352a;color:#d9ffef;padding:10px 16px;font:inherit;font-weight:700}
+  button.run{background:#0f2a1e;border-color:#2f7a55;color:#b8ffd9}
+  button.sleep{background:#2a1a12;border-color:#7a4a2f;color:#ffd6b8}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  .muted{color:var(--dim);font-size:13px}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th,td{text-align:left;padding:8px 6px;border-bottom:1px solid #16202c}
+  th{color:var(--dim);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.4px}
+  .recap{white-space:pre-line;background:#0a0f17;border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:8px;font-size:13px;color:#c9d6e6}
+  .tag{font-size:11px;padding:2px 7px;border-radius:999px;border:1px solid var(--line);color:var(--dim)}
+  .ok{color:var(--acc)} .bad{color:var(--warn)}
+  footer{margin-top:26px;color:var(--dim);font-size:12px}
+  code{background:#0b111a;border:1px solid var(--line);padding:1px 5px;border-radius:6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">WHEEL <span>RAID</span></div>
+    <div class="row" style="margin:0">
+      <span class="pill" id="week">week —</span>
+      <span class="pill" id="round">round —</span>
+      <span class="pill" id="src">source: api.squeekchain.com</span>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="card">
+      <h2>Weekly boss</h2>
+      <div class="boss" id="bossName">—</div>
+      <div class="bar"><i id="hpBar" style="width:0%"></i></div>
+      <div class="hp"><span id="hpText">—</span><span id="hpPct">—</span></div>
+      <div class="grid">
+        <div class="stat"><b id="statPlayers">0</b><small>raiders this week</small></div>
+        <div class="stat"><b id="statDist">0 m</b><small>last round distance</small></div>
+        <div class="stat"><b id="statDmg">0</b><small>team damage (last)</small></div>
+      </div>
+      <div class="row" style="margin-top:16px">
+        <button class="run" id="btnRun">RUN 🏃</button>
+        <button class="sleep" id="btnSleep">SLEEP 😴</button>
+        <span class="muted" id="predictNote">join first to call the next round</span>
+      </div>
+      <p class="muted" style="margin:10px 0 0">Damage = real sprint distance of the round (completed blocks + work) × role × 1.5 if your call is right. One call per round; you can change it until the round settles.</p>
+    </div>
+
+    <div class="card">
+      <h2>Join the raid</h2>
+      <div class="row">
+        <input id="name" placeholder="your raider name" maxlength="24" />
+        <select id="role">
+          <option value="dps">DPS · 1.3×</option>
+          <option value="tank">Tank · 1.0×</option>
+          <option value="healer">Healer · 0.8× + team 1.1×</option>
+        </select>
+      </div>
+      <div class="row">
+        <input id="addr" placeholder="Squeekchain/Sepolia address (optional)" />
+        <button id="btnJoin">Join</button>
+      </div>
+      <p class="muted" id="joinNote" style="margin:10px 0 0">No wallet connection, no signature, no tokens. Address is only a label for the leaderboard.</p>
+      <p class="muted" style="margin:8px 0 0">Save your <b>player token</b> — it is the only way to call rounds from this browser.</p>
+    </div>
+  </section>
+
+  <section class="card" style="margin-top:18px">
+    <h2>Weekly leaderboard</h2>
+    <table><thead><tr><th>#</th><th>Raider</th><th>Role</th><th>Damage</th><th>Calls</th></tr></thead>
+      <tbody id="lb"><tr><td colspan="5" class="muted">no damage yet this week</td></tr></tbody></table>
+  </section>
+
+  <section class="hero" style="margin-top:18px">
+    <div class="card">
+      <h2>Round feed</h2>
+      <div id="recaps"><div class="muted">waiting for the first settled round…</div></div>
+    </div>
+    <div class="card">
+      <h2>How it works</h2>
+      <p class="muted" style="margin-top:0">Squeekchain settles a round every 10 minutes. Wheel Raid reads the public round work from <code>api.squeekchain.com/v1/core</code> and converts it to distance (1 work = 8 m).</p>
+      <p class="muted">Every round you call <b>RUN</b> (distance ≥ median of the last 10 rounds) or <b>SLEEP</b> (below). Correct call = 1.5× damage. A correct healer lifts the whole team by 10%.</p>
+      <p class="muted">Boss HP is shared by everyone. Kill it and the next tier spawns immediately — same week, bigger HP, same leaderboard.</p>
+      <p class="muted">Recaps are posted to the community Discord channel by webhook. No private keys, no transactions, no real tokens.</p>
+    </div>
+  </section>
+
+  <footer>
+    Wheel Raid · community project for Squeekchain Genesis · data: public API only ·
+    <a href="/api/state">/api/state</a> · <a href="/healthz">/healthz</a>
+  </footer>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+let token = localStorage.getItem("wr_token") || "";
+let me = JSON.parse(localStorage.getItem("wr_me") || "null");
+
+function fmt(n){ return Number(n||0).toLocaleString("en-US"); }
+function note(t, cls){ const s=$("predictNote"); s.textContent=t; s.className="muted "+(cls||""); }
+
+async function load(){
+  try{
+    const s = await (await fetch("/api/state")).json();
+    $("week").textContent = s.week;
+    $("round").textContent = "round " + s.round.next + " open";
+    $("bossName").textContent = s.boss.name + " · tier " + s.boss.tier;
+    $("hpBar").style.width = s.boss.hpPct + "%";
+    $("hpText").textContent = fmt(s.boss.hp) + " / " + fmt(s.boss.max_hp) + " HP";
+    $("hpPct").textContent = s.boss.hpPct + "%";
+    $("statPlayers").textContent = s.players;
+    const last = s.round.recent[0];
+    $("statDist").textContent = last ? Math.round(last.dist) + " m" : "—";
+    $("statDmg").textContent = s.leaderboard.length ? fmt(s.leaderboard[0].damage) : "0";
+    const lb = $("lb");
+    lb.innerHTML = s.leaderboard.length ? s.leaderboard.map((r,i)=>
+      `<tr><td>${i+1}</td><td>${r.name}</td><td><span class="tag">${r.role}</span></td><td>${fmt(r.damage)}</td><td>${r.hits}/${r.guesses}</td></tr>`).join("")
+      : `<tr><td colspan="5" class="muted">no damage yet this week</td></tr>`;
+    $("recaps").innerHTML = s.recaps.length ? s.recaps.map(r=>`<div class="recap">${r.text}</div>`).join("")
+      : `<div class="muted">waiting for the first settled round…</div>`;
+    if (token) note(me ? `signed in as ${me.name} · call the next round` : "call the next round");
+  }catch(e){ $("src").textContent = "source error: " + e.message; }
+}
+
+$("btnJoin").onclick = async () => {
+  const body = { name: $("name").value, role: $("role").value, address: $("addr").value || null };
+  const r = await fetch("/api/join", { method:"POST", headers:{"content-type":"application/json"}, body: JSON.stringify(body) });
+  const d = await r.json();
+  if (!r.ok) return $("joinNote").textContent = "join failed: " + d.error;
+  token = d.token; me = d;
+  localStorage.setItem("wr_token", token); localStorage.setItem("wr_me", JSON.stringify(d));
+  $("joinNote").innerHTML = `joined as <b>${d.name}</b> (${d.role}). Token saved in this browser.`;
+  note("call the next round");
+};
+
+async function call(guess){
+  if (!token) return note("join first — no token in this browser", "bad");
+  const r = await fetch("/api/predict", { method:"POST", headers:{"content-type":"application/json","x-player-token":token}, body: JSON.stringify({ guess }) });
+  const d = await r.json();
+  if (!r.ok) return note("call failed: " + d.error, "bad");
+  note(`called ${d.guess.toUpperCase()} for round ${d.roundId}${d.changed ? " (changed)" : ""}`, "ok");
+}
+$("btnRun").onclick = () => call("run");
+$("btnSleep").onclick = () => call("sleep");
+
+load(); setInterval(load, 10000);
+</script>
+</body>
+</html>
