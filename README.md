@@ -71,3 +71,5 @@ record and README line are issued by Squeekchain at submission time and will be 
 ## Stack
 
 Node 22+ (ESM), built-in `node:sqlite`, zero runtime dependencies, one static HTML page.
+
+squeekchain-project:d2b48338-d355-456c-bb58-e8e4771c99ad
